@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.base import clone
-
+import math
 
 class AdaBoostBinaryClassifier(object):
     '''
@@ -37,10 +37,13 @@ class AdaBoostBinaryClassifier(object):
 
         Build the estimators for the AdaBoost estimator.
         '''
-        # print x.shape
-        # print y.shape
-        pass  ### YOUR CODE HERE ###
 
+        sample_weight = np.ones(len(y), dtype=np.float)/len(y)
+        for idx in xrange(self.n_estimator):
+            tree, sample_weight, estimator_weight = self._boost(x, y, sample_weight)
+            self.estimator_weight_[idx] = estimator_weight
+            self.estimators_.append(tree)
+        return None
 
     def _boost(self, x, y, sample_weight):
         '''
@@ -84,9 +87,9 @@ class AdaBoostBinaryClassifier(object):
         OUTPUT:
         - labels: numpy array of predictions (0 or 1)
         '''
-
-        pass  ### YOUR CODE HERE ###
-
+        G_m = np.array([tree.predict(x) for tree in self.estimators_])
+        G = (self.estimator_weight_.dot(G_m) > 0) + 0
+        return G
 
     def score(self, x, y):
         '''
@@ -98,4 +101,18 @@ class AdaBoostBinaryClassifier(object):
         - score: float (accuracy score between 0 and 1)
         '''
 
-        pass  ### YOUR CODE HERE ###
+        y_hat = self.predict(x)
+        return np.sum(y_hat == y)/float(len(y))
+
+
+from sklearn.cross_validation import train_test_split
+data = np.genfromtxt('./data/spam.csv', delimiter=',')
+
+y = data[:, -1]
+x = data[:, 0:-1]
+
+train_x, test_x, train_y, test_y = train_test_split(x, y)
+
+my_ada = AdaBoostBinaryClassifier(n_estimators=50)
+my_ada.fit(train_x, train_y)
+my_ada.score(test_x, test_y)
